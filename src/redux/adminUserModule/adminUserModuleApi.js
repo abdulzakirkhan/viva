@@ -63,7 +63,7 @@ export const permissionModuleApi = api.injectEndpoints({
       query: (body) => {
         return {
           // url: `${ADMIN_AUDIT_LISTING}?from=${body.from}&to=${body.to}&action=${body.status}`,
-          url: `${ADMIN_AUDIT_LISTING}?${body?.from ? "from=" + body.from + "&" : ""}${body?.to ? "to=" + body.to : ""}${body?.updatedBy ? "updatedBy=" + body.updatedBy : ""}${body?.adminUserId ? "adminUserId=" + body.adminUserId : ""}`,
+          url: `${ADMIN_AUDIT_LISTING}?${body?.from ? "from=" + body.from + "&" : ""}${body?.to ? "to=" + body.to : ""}${body?.updatedBy ?  "&" + "updatedBy=" + body.updatedBy : ""}${body?.adminUserId ? "&" + "adminUserId=" + body.adminUserId : ""}`,
           method: "GET",
         };
       },

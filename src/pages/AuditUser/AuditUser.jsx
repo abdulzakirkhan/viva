@@ -53,7 +53,7 @@ const AuditUser = () => {
   const params ={
     from: toUtcStartOfDay(filters.start) || "",
     to: toUtcEndOfDay(filters.end) || "",
-    status: filters.status,
+    updatedBy: userId ? userId : ""
   }
 
 
@@ -88,10 +88,8 @@ const AuditUser = () => {
     try {
       const from = toUtcStartOfDay(values.start) || getDateNDaysAgo(7);
       const to = toUtcEndOfDay(values.end) || getCurrentDate();
-      const action = values.status;
-
       const response = await fetch(
-        `${BASE_URL}admin/admins/audits/export.xlsx`,
+        `${BASE_URL}admin/admins/audits/export.xlsx?${params?.updatedBy ? "updatedBy=" + params?.updatedBy :""}${from ? "&from="+from:""}${to ? "&to="+to : ""}`,
         { method: "GET", headers: { Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } }
       );
 

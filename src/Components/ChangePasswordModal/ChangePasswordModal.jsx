@@ -19,7 +19,7 @@ export default function ChangePasswordModal({ open, onClose }) {
           <Dialog.Title className="text-lg font-semibold text-gray-900 mb-6">
             Change Password
           </Dialog.Title>
-
+    
           <Formik
             initialValues={{ oldPassword: "", newPassword: "" }}
             validationSchema={ChangePasswordSchema}
