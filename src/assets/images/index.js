@@ -1,0 +1,1 @@
+export { default as LogoFeed } from './logoupd.png'

@@ -1,0 +1,8 @@
+/* src/index.css */
+@import "tailwindcss";
+
+@theme {
+  --color-brand-500: #7c3aed;
+  --color-brand-600: #6d28d9;
+  --color-gray-custom: #1e1c28b2; /* 70% opacity */
+}
