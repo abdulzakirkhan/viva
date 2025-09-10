@@ -1,4 +1,4 @@
-const BASE_URL = "https://e6c48bbf03ad.ngrok-free.app/";
+const BASE_URL = "https://ec7dd1daaf00.ngrok-free.app/";
 
 const PERMISSIONS_MODULES = "permission-modules";
 const ROLES_MODULES = "role-modules";
