@@ -1,4 +1,4 @@
-const BASE_URL = "https://ec7dd1daaf00.ngrok-free.app/";
+const BASE_URL = "https://portal.meetingwithteacher.com/";
 
 const PERMISSIONS_MODULES = "permission-modules";
 const ROLES_MODULES = "role-modules";

@@ -48,9 +48,9 @@ export const packagesModuleApi = api.injectEndpoints({
 
 
     getAllPackagesAudit: builder.query({
-      query: () => {
+      query: (body) => {
         return {
-          url: `${LIST_PACKAGES}/audits`,
+          url: `${LIST_PACKAGES}/audits?${body?.from ? `from=${body.from}` : ""}${body?.to ? `&to=${body.to}` : ""}${body?.packageId ? `&packageId=${body.packageId}` : ""}${body?.updatedBy ? `&updatedBy=${body.updatedBy}` : ""}${body?.fieldIncludes ? `&fieldIncludes=${body.fieldIncludes}` : ""}`,
           method: "GET",
         };
       },
