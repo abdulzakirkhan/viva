@@ -14,10 +14,12 @@ export const feedbackModuleApi = api.injectEndpoints({
       providesTags: ["GetAllFeedbacks"],
     }),
 
+
+    //url: `${LIST_PACKAGES}/audits?${body?.from ? `from=${body.from}` : ""}${body?.to ? `&to=${body.to}` : ""}${body?.packageId ? `&packageId=${body.packageId}` : ""}${body?.updatedBy ? `&updatedBy=${body.updatedBy}` : ""}${body?.fieldIncludes ? `&fieldIncludes=${body.fieldIncludes}` : ""}`,
     getAuditFeedbacks: builder.query({
       query: (body) => {
         return {
-          url: `${FEEDBACKS}/audits?from=${body.from}&to=${body.to}&action=${body.action}`,
+          url: `${FEEDBACKS}/audits?${body?.from ? `from=${body.from}` : ""}${body?.to ? `&to=${body.to}` : ""}${body?.feedbackId ? `&feedbackId=${body.feedbackId}` : ""}${body?.actedBy ? `&actedBy=${body.actedBy}` : ""}${body?.action ? `&action=${body.action}` : ""}`,
           method: "GET",
         };
       },
@@ -40,8 +42,9 @@ export const feedbackModuleApi = api.injectEndpoints({
     getExportExcelAuditFeedbacks: builder.query({
       query: (body) => {
         return {
-          url: `${FEEDBACKS}/audits/export.xlsx?from=${body.from}&to=${body.to}&action=${body.action}`,
+          url: `${FEEDBACKS}/audits/export.xlsx?${body?.from ? `from=${body.from}` : ""}${body?.to ? `&to=${body.to}` : ""}${body?.feedbackId ? `&feedbackId=${body.feedbackId}` : ""}${body?.actedBy ? `&actedBy=${body.actedBy}` : ""}${body?.action ? `&action=${body.action}` : ""}`,
           method: "GET",
+          responseHandler: (response) => response.blob(),
         };
       },
       providesTags: ["GetAuditFeedbacks"],
@@ -55,4 +58,5 @@ export const {
     useGetAllFeedbacksQuery,
     useGetAuditFeedbacksQuery,
     useUpdateFeedbackStatusMutation,
+    useLazyGetExportExcelAuditFeedbacksQuery,
 } = feedbackModuleApi;

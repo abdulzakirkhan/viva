@@ -1,13 +1,26 @@
-import  { useState } from "react";
+import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { DataTable, Loader } from "../../Components";
 import { useLocation } from "react-router-dom";
-import { getCurrentDate, getDateNDaysAgo, toUtcEndOfDay, toUtcStartOfDay } from "../../helper";
+import {
+  getCurrentDate,
+  getDateNDaysAgo,
+  toUtcEndOfDay,
+  toUtcStartOfDay,
+} from "../../helper";
 import toast from "react-hot-toast";
-import { useGetAdminUserAuditListingQuery, useGetAllUserListingQuery } from "../../redux/adminUserModule/adminUserModuleApi";
+import {
+  useGetAdminUserAuditListingQuery,
+  useGetAllUserListingQuery,
+} from "../../redux/adminUserModule/adminUserModuleApi";
 import { BASE_URL } from "../../constants/apiUrls";
-import { buttonClassName, fieldClassName, filterBoxClassName } from "../../constant";
+import {
+  buttonClassName,
+  fieldClassName,
+  filterBoxClassName,
+} from "../../constant";
+import { useSelector } from "react-redux";
 
 /* --------------------------- validation -------------------------- */
 const isNotFuture = (v) => !v || new Date(v) <= new Date();
@@ -16,66 +29,72 @@ const isAfterOrEqual = (a, b) => new Date(a) >= new Date(b);
 const FiltersSchema = Yup.object({
   // status: Yup.mixed().oneOf(["approved", "rejected", "All"]).required("Status is required"),
   start: Yup.string()
-    .required("Start date is required")
-    .test("start-not-future", "Start date cannot be in the future", isNotFuture),
+    .nullable()
+    .notRequired()
+    .test(
+      "start-not-future",
+      "Start date cannot be in the future",
+      isNotFuture
+    ),
   end: Yup.string()
-    .required("End date is required")
-    .test("end-after-start", "End date must be after start date", function (end) {
-      const { start } = this.parent;
-      if (!end || !start) return true;
-      return isAfterOrEqual(end, start);
-    })
+    .nullable()
+    .notRequired()
+    .test(
+      "end-after-start",
+      "End date must be after start date",
+      function (end) {
+        const { start } = this.parent;
+        if (!end || !start) return true;
+        return isAfterOrEqual(end, start);
+      }
+    )
     .test("end-not-future", "End date cannot be in the future", isNotFuture),
 });
 
 /* --------------------------- CSV Download ------------------------- */
 
-
 /* ------------------------------ page ----------------------------- */
 const AuditUser = () => {
-  const { data:allUsersListingData, isLoading:allUsersLoading, error:allUsersError  } = useGetAllUserListingQuery();
+  const {
+    data: allUsersListingData,
+    isLoading: allUsersLoading,
+    error: allUsersError,
+  } = useGetAllUserListingQuery();
   const today = new Date().toISOString().split("T")[0];
   const { key: routeKey } = useLocation();
   const [userName, setUserName] = useState("");
   const [userId, setUserId] = useState("");
   const [filters, setFilters] = useState({
     start: "",
-    end: ""
+    end: "",
   });
 
-
-
-  const usersData = allUsersListingData || []
+  const usersData = allUsersListingData || [];
 
   /* ----------------------- API Fetch ----------------------- */
   // const [params, setParams] = useState()
 
-  const params ={
+  const params = {
     from: toUtcStartOfDay(filters.start) || "",
     to: toUtcEndOfDay(filters.end) || "",
-    updatedBy: userId ? userId : ""
-  }
+    updatedBy: userId ? userId : "",
+  };
 
+  const { data, error, isLoading, refetch } =
+    useGetAdminUserAuditListingQuery(params);
 
-  
-  const { data, error, isLoading, refetch } = useGetAdminUserAuditListingQuery(params);
-
-  console.log("params",params)
-  const rows = data?.items?.map((item) => ({
-    auditId: item?._id,
-    userName: item?.adminUser?.name,
-    // userEmail: item?.adminUser?.email,
-    changedFields: item.changedFields, 
-    updatedByName: item.updatedBy?.name,
-    updatedByEmail: item.updatedBy?.email,
-    before: Object.entries(item.before || {}), 
-    after: Object.entries(item.after || {}),
-    actedAt: new Date(item.actedAt).toLocaleString(),
-  })) || [];
-
-
-
-
+  const rows =
+    data?.items?.map((item) => ({
+      auditId: item?._id,
+      userName: item?.adminUser?.name,
+      // userEmail: item?.adminUser?.email,
+      changedFields: item.changedFields,
+      updatedByName: item.updatedBy?.name,
+      updatedByEmail: item.updatedBy?.email,
+      before: Object.entries(item.before || {}),
+      after: Object.entries(item.after || {}),
+      actedAt: new Date(item.actedAt).toLocaleString(),
+    })) || [];
 
   /* ----------------------- Handle Form Change ----------------------- */
   const handleFormChange = (values) => {
@@ -84,13 +103,23 @@ const AuditUser = () => {
   };
 
   /* ----------------------- Handle Download ----------------------- */
+  const BearerToken = useSelector((s) => s.auth.token);
   const handleDownload = async (values) => {
     try {
       const from = toUtcStartOfDay(values.start) || getDateNDaysAgo(7);
       const to = toUtcEndOfDay(values.end) || getCurrentDate();
       const response = await fetch(
-        `${BASE_URL}admin/admins/audits/export.xlsx?${params?.updatedBy ? "updatedBy=" + params?.updatedBy :""}${from ? "&from="+from:""}${to ? "&to="+to : ""}`,
-        { method: "GET", headers: { Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } }
+        `${BASE_URL}admin/admins/audits/export.xlsx?${
+          params?.updatedBy ? "updatedBy=" + params?.updatedBy : ""
+        }${from ? "&from=" + from : ""}${to ? "&to=" + to : ""}`,
+        {
+          method: "GET",
+          headers: {
+            Accept:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            Authorization: `Bearer ${BearerToken}`,
+          },
+        }
       );
 
       if (!response.ok) throw new Error("Failed to download file");
@@ -168,7 +197,7 @@ const AuditUser = () => {
               key={idx}
               className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded"
             >
-            {formatValue(value)}
+              {formatValue(value)}
             </span>
           ))}
         </div>
@@ -181,11 +210,11 @@ const AuditUser = () => {
   // const fieldClassName = "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500";
   // const filterBoxClassName = "grid w-full flex-1 grid-cols-1 gap-3 rounded-2xl bg-gray-50 p-3 sm:grid-cols-1 lg:grid-cols-3";
 
-  if(isLoading || allUsersLoading){
-    return <Loader />
+  if (isLoading || allUsersLoading) {
+    return <Loader />;
   }
 
-  console.log("userId :",userId)
+  console.log("userId :", userId);
 
   return (
     <div className="px-4 py-8 bg-[#F5F7F9]">
@@ -198,18 +227,19 @@ const AuditUser = () => {
         {({ values, handleChange }) => (
           <>
             <div className="flex items-center mb-6">
-              <h1 className="text-xl font-semibold text-gray-900">Users Audit Logs</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Users Audit Logs
+              </h1>
             </div>
             <Form className="flex flex-col lg:flex-row !flex-wrap lg:items-center gap-3">
-
               <div className={filterBoxClassName}>
                 <div className="relative flex items-center gap-3">
                   <h1>Updated By</h1>
                   <select
                     value={userName}
                     onChange={(e) => {
-                      const name = e.target.value; // selected name
-                      const id = e.target.selectedOptions[0].dataset.id; // get id from data-id
+                      const name = e.target.value;
+                      const id = e.target.selectedOptions[0].dataset.id;
                       setUserName(name);
                       setUserId(id);
                     }}
@@ -217,7 +247,11 @@ const AuditUser = () => {
                   >
                     <option value="">Updated By</option>
                     {usersData?.map((p) => (
-                      <option key={p._id || p.id} value={p.name} data-id={p._id || p.id}>
+                      <option
+                        key={p._id || p.id}
+                        value={p.name}
+                        data-id={p._id || p.id}
+                      >
                         {p.name}
                       </option>
                     ))}
@@ -234,23 +268,6 @@ const AuditUser = () => {
                     />
                   </svg>
                 </div>
-                {/* <div className="md:flex items-center gap-3">
-                  <label className="text-xs text-gray-500">Status</label>
-                  <Field
-                    as="select"
-                    name="status"
-                    className={fieldClassName}
-                    onChange={(e) => {
-                      handleChange(e);
-                      handleFormChange({ ...values, status: e.target.value });
-                    }}
-                  >
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="All">All</option>
-                  </Field>
-                  <ErrorMessage name="status" component="div" className="text-xs text-rose-600" />
-                </div> */}
 
                 <div className="flex flex-col">
                   <Field
@@ -263,7 +280,11 @@ const AuditUser = () => {
                       handleFormChange({ ...values, start: e.target.value });
                     }}
                   />
-                  <ErrorMessage name="start" component="div" className="text-xs text-rose-600" />
+                  <ErrorMessage
+                    name="start"
+                    component="div"
+                    className="text-xs text-rose-600"
+                  />
                 </div>
 
                 <div className="flex flex-col">
@@ -277,16 +298,27 @@ const AuditUser = () => {
                       handleFormChange({ ...values, end: e.target.value });
                     }}
                   />
-                  <ErrorMessage name="end" component="div" className="text-xs text-rose-600" />
+                  <ErrorMessage
+                    name="end"
+                    component="div"
+                    className="text-xs text-rose-600"
+                  />
                 </div>
               </div>
 
               <div className="flex items-end sm:w-full lg:w-auto">
-                <button type="submit" className={buttonClassName}>Download Excel</button>
+                <button type="submit" className={buttonClassName}>
+                  Download Excel
+                </button>
               </div>
             </Form>
 
-            <DataTable columns={columns} data={rows} rowKey="auditId" className="mt-4" />
+            <DataTable
+              columns={columns}
+              data={rows}
+              rowKey="auditId"
+              className="mt-4"
+            />
           </>
         )}
       </Formik>

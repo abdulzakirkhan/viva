@@ -4,6 +4,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useGetMockLivePackagesRatesQuery, useUpdateMockLivePackageRatesMutation } from "../../redux/packagesModule/packagesModuleApi";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 // ✅ Validation schema
 const validationSchema = Yup.object({
@@ -20,14 +21,15 @@ const PackagesRatesForm = () => {
   const { data, isLoading, error } = useGetMockLivePackagesRatesQuery();
   const [updateRates, { isLoading: isUpdating, isSuccess, isError, error: updateError }] = useUpdateMockLivePackageRatesMutation();
 
-  if (isLoading) return <p>Loading rates...</p>;
-  if (error) return <p className="text-red-500">Failed to load rates</p>;
+
+  const navigate = useNavigate();
 
   // Assuming API returns { mockRate: 200, liveRate: 500 }
   const initialValues = {
     mockRate: data?.mockRate ?? "",
     liveRate: data?.liveRate ?? "",
   };
+
 
   return (
     <div className="max-w-md mx-auto p-6">
@@ -42,9 +44,14 @@ const PackagesRatesForm = () => {
                 mockRate: Number(values.mockRate),
             };
             const result = await updateRates(payload).unwrap();
-            if(result?.message === "RateConfig updated" || result?.data){
-                toast.success(result?.message || "Rates updated successfully");
-                setSubmitting(false);
+            console.log("result :", result);
+            if(result?.message === "RateConfig updated"){
+              toast.success(result?.message || "Rates updated successfully");
+              setSubmitting(false);
+              // navigate("/packages");
+            }else if(result?.message === "No changes detected."){
+              toast.error("No changes detected.");
+              setSubmitting(false);
             }
           } catch (error) {
             toast.error("Failed to update rates");

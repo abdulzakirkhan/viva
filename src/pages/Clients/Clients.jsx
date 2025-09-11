@@ -104,13 +104,12 @@ const Clients = () => {
     try {
       const payload = { id }; 
       const res = await blockClient(payload).unwrap();
+      console.log("res : ", res);
       if(res?.message === 'User blocked successfully'){
         toast.success(res?.message ||"Client blocked successfully.");
       }
     } catch (err) {
       toast.error(err?.data?.message || "Failed to update client status.");
-    } finally {
-      setMenuOpenId(null);
     }
   }
 
@@ -179,7 +178,7 @@ const Clients = () => {
             outerClassName="relative inline-block"
             triggerClassName="inline-flex cursor-pointer items-center justify-center rounded-full border-2 border-[#9C4EDC] text-violet-600 hover:bg-violet-50"
             items={[
-              { label: "Activate", onClick: () => activateUser(row.id, true), show: !row.enabled },
+              // { label: "Activate", onClick: () => activateUser(row.id, true), show: !row.enabled },
               { label: "Block", onClick: () => blockUser(row.id, false), show: row.enabled },
             ]}
           />
@@ -187,10 +186,6 @@ const Clients = () => {
       ),
     },
   ];
-
-  if(blockLoading) {
-    return <Loader />
-  }
 
 
   // paginations
@@ -277,14 +272,6 @@ const Clients = () => {
 
       {/* loading / error */}
       {clientsLoading && <Loader />}
-      {/* {clientsError && (
-        <div className="p-4 text-sm text-rose-600">
-          Failed to load clients.
-          <button onClick={() => refetch()} className="ml-2 underline">
-            Retry
-          </button>
-        </div>
-      )} */}
 
       {/* table */}
       {!clientsLoading && !clientsError && (

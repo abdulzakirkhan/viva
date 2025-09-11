@@ -6,13 +6,14 @@ import { useCreateAdminUserMutation, useGetAllUserListingQuery, useUpdateAdminUs
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
+import { Loader } from "../../Components";
 
 const phoneRegExp = /^(\+?\d{1,3}[- ]?)?\(?\d{2,4}\)?[- ]?\d{3,4}[- ]?\d{3,4}$/;
 
 // ✅ Validate by ID (parentRoleId), not by label
 const validationSchema = Yup.object({
   parentRoleId: Yup.string().required("Select a parent role"),
-  name: Yup.string().min(2, "Too short").required("Your name is required"),
+  name: Yup.string().trim().strict(true).min(3, "Too short").required("Your name is required"),
   email: Yup.string().email("Invalid email").required("Email is required"),
 });
 
@@ -73,6 +74,7 @@ function UserAdd() {
   const { userId } = useParams();
   const [formValues, setFormValues] = React.useState(initialValues);
   const [createAdminUser, { isLoading, isSuccess, isError, error }] =useCreateAdminUserMutation();
+
 
 
   const { data, isLoading: userLoading, error: userError } = useGetAllUserListingQuery();
@@ -146,6 +148,9 @@ function UserAdd() {
   }, [userId,data])
   
 
+  if(isLoading || userLoading || isUpdatingLoading){
+    return <Loader />
+  }
   return (
     <div className="min-h-screen bg-[#F5F7F9]">
       <Formik

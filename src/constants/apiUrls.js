@@ -1,4 +1,5 @@
-const BASE_URL = "https://portal.meetingwithteacher.com/";
+// const BASE_URL = "https://portal.meetingwithteacher.com";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const PERMISSIONS_MODULES = "permission-modules";
 const ROLES_MODULES = "role-modules";

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useGetAllPackagesQuery, useGetMockLivePackagesRatesQuery, useUpdatePackageMutation } from "../../redux/packagesModule/packagesModuleApi";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -75,7 +75,7 @@ const UpdatePackage = () => {
   const foundPackage = data?.data?.find((pkg) => pkg._id === id);
   
   const isInterPrise = foundPackage?.name === "Enterprise" || false;
-
+  const navigate = useNavigate()
   useEffect(() => {
     if (id && foundPackage?.name !== "Enterprise") {
       setTitle("Update Package");
@@ -143,6 +143,7 @@ const UpdatePackage = () => {
                 const result =await updatePackage(payload).unwrap();
                 if(result?.message === "Package updated" || result?.data){
                   toast.success("Package updated successfully");
+                  navigate("/packages")
                 }
               } catch (error) {
                 toast.error(error || "Something went wrong");

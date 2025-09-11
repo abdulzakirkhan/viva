@@ -275,27 +275,27 @@
 // };
 
 // export default FeedbacksCsv;
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useId } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { ActionMenu, DataTable, Loader } from "../../Components";
 import { useLocation } from "react-router-dom";
-import { useGetAuditFeedbacksQuery } from "../../redux/feedbackModule/feedbackModuleApi";
+import { useGetAuditFeedbacksQuery, useLazyGetExportExcelAuditFeedbacksQuery } from "../../redux/feedbackModule/feedbackModuleApi";
 import { getCurrentDate, getDateNDaysAgo, toUtcEndOfDay, toUtcStartOfDay } from "../../helper";
 import toast from "react-hot-toast";
 import { BASE_URL } from "../../constants/apiUrls";
+import { useGetAllUserListingQuery } from "../../redux/adminUserModule/adminUserModuleApi";
 
 /* --------------------------- validation -------------------------- */
 const isNotFuture = (v) => !v || new Date(v) <= new Date();
 const isAfterOrEqual = (a, b) => new Date(a) >= new Date(b);
 
 const FiltersSchema = Yup.object({
-  status: Yup.mixed().oneOf(["approved", "rejected", "All"]).required("Status is required"),
-  start: Yup.string()
-    .required("Start date is required")
+  status: Yup.mixed().oneOf(["approved", "rejected", "All"]).nullable().notRequired(),
+  start: Yup.string().nullable().notRequired()
     .test("start-not-future", "Start date cannot be in the future", isNotFuture),
   end: Yup.string()
-    .required("End date is required")
+  .nullable().notRequired()
     .test("end-after-start", "End date must be after start date", function (end) {
       const { start } = this.parent;
       if (!end || !start) return true;
@@ -304,76 +304,55 @@ const FiltersSchema = Yup.object({
     .test("end-not-future", "End date cannot be in the future", isNotFuture),
 });
 
-/* --------------------------- CSV Download ------------------------- */
-const downloadCSV = (rows, filename = "feedback.csv") => {
-  if (!rows.length) return;
-  const header = Object.keys(rows[0]);
-  const body = rows.map((r) => header.map((key) => `"${String(r[key] ?? "").replace(/"/g, '""')}"`));
-
-  const csv = [header, ...body].map((arr) => arr.join(",")).join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-
-  if (window.navigator?.msSaveOrOpenBlob) {
-    window.navigator.msSaveOrOpenBlob(blob, filename);
-    return;
-  }
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-};
-
 /* ------------------------------ page ----------------------------- */
 const FeedbacksCsv = () => {
   const today = new Date().toISOString().split("T")[0];
   const { key: routeKey } = useLocation();
+  const filterRef = useRef(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [feedbackId, setFeedbackId] = useState('')
+  const [feedbackName, setFeedbackName] = useState('')
+  const [userId, setUserId] = useState('')
+  const [userName, setUserName] = useState('')
 
-  const [menuOpenId, setMenuOpenId] = useState(null);
+  /* ----------------------- API TRIGGER State ----------------------- */
+  const [trigger, setTrigger] = useState(false);
   const [filters, setFilters] = useState({
-    status: "approved",
+    status: "",
     start: "",
     end: ""
   });
 
   /* ----------------------- API Fetch ----------------------- */
   const params = {
-    from: toUtcStartOfDay(filters.start) || getDateNDaysAgo(7),
-    to: toUtcEndOfDay(filters.end) || getCurrentDate(),
-    action: filters.status
+    from: toUtcStartOfDay(filters.start) || "",
+    to: toUtcEndOfDay(filters.end) || "",
+    action: filters.status || "",
+    feedbackId: feedbackId || "",
+    actedBy: userId || ""
   };
 
 
 
+  const { data:userList, isLoading:userLoading, error:userError  } = useGetAllUserListingQuery();
   const { data, error, isLoading, refetch } = useGetAuditFeedbacksQuery(params);
   const rows = data?.items || [];
-
   /* ----------------------- Handle Form Change ----------------------- */
   const handleFormChange = (values) => {
     setFilters(values); // immediately update filters -> triggers API call
   };
 
   /* ----------------------- Handle Download ----------------------- */
-  const handleDownload = async (values) => {
+  const id = useId()
+  const [ triggerExport, { data:exportData, isFetching }] = useLazyGetExportExcelAuditFeedbacksQuery()
+  const handleDownload = async (e) => {
+    // e.preventDefault();
     try {
-      const from = toUtcStartOfDay(values.start) || getDateNDaysAgo(7);
-      const to = toUtcEndOfDay(values.end) || getCurrentDate();
-      const action = values.status;
-
-      const response = await fetch(
-        `${BASE_URL}feedbacks/audits/export.xlsx?from=${from}&to=${to}&action=${action}`,
-        { method: "GET", headers: { Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } }
-      );
-
-      if (!response.ok) throw new Error("Failed to download file");
-
-      const blob = await response.blob();
+      const blob = await triggerExport(params).unwrap();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `audit_feedbacks_${from}_${to}.xlsx`;
+      a.download = `audit_feedbacks_${id}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -402,6 +381,25 @@ const FeedbacksCsv = () => {
   const filterBoxClassName = "grid w-full flex-1 grid-cols-1 gap-3 rounded-2xl bg-gray-50 p-3 sm:grid-cols-1 lg:grid-cols-3";
 
 
+
+
+
+  const feedbacksdata = data?.items || []
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setShowFilters(false);
+      }
+    };
+    if (showFilters) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFilters]);
+
+
+
   if(isLoading){
     return <Loader />
   }
@@ -415,64 +413,184 @@ const FeedbacksCsv = () => {
       >
         {({ values, handleChange }) => (
           <>
-            <Form className="flex flex-col lg:flex-row !flex-wrap lg:items-center gap-3">
-              <div className="w-full lg:w-1/4 flex items-center">
-                <h1 className="text-xl font-semibold text-gray-900">Feedbacks</h1>
-              </div>
+            <Form className="flex justify-between items-center">
+              <h1 className="text-xl font-semibold text-gray-900">
+                Package Audit Logs
+              </h1>
 
-              <div className={filterBoxClassName}>
-                <div className="md:flex items-center gap-3">
-                  <label className="text-xs text-gray-500">Filters</label>
-                  <Field
-                    as="select"
-                    name="status"
-                    className={fieldClassName}
-                    onChange={(e) => {
-                      handleChange(e);
-                      handleFormChange({ ...values, status: e.target.value });
-                    }}
+              <div className="flex items-center gap-4">
+                {/* Filter Button + Box */}
+                <div className="relative" ref={filterRef}>
+                  <button
+                    type="button"
+                    className="rounded bg-purple-500 px-4 py-2 text-white hover:bg-purple-600"
+                    onClick={() => setShowFilters(!showFilters)}
                   >
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="All">All</option>
-                  </Field>
-                  <ErrorMessage name="status" component="div" className="text-xs text-rose-600" />
+                    Filter Audit
+                  </button>
+
+                  {showFilters && (
+                    <div className="p-4 space-y-4 bg-gray-50 w-66 rounded-xl border-2 border-gray-200 shadow-xl absolute top-12 -left-2 z-50">
+                      <div className="relative">
+                        <label htmlFor="parentRole" className="text-sm font-medium text-gray-700 mb-1">By User</label>
+                        <select
+                          value={userName}
+                          onChange={(e) => {
+                            const name = e.target.value; // selected name
+                            const id = e.target.selectedOptions[0].dataset.id; // get id from data-id
+                            setUserName(name);
+                            setUserId(id);
+                          }}
+                          className="appearance-none w-full rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-10 text-sm text-gray-700 shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-indigo-100"
+                        >
+                          <option value="">Select Field Name</option>
+                          {userList?.map((user) => (
+                            <option key={user?._id} value={user?.name} data-id={user?._id}>
+                              {user.name}
+                            </option>
+                          ))}
+                        </select>
+                        <svg
+                          className="pointer-events-none absolute right-1 top-10 h-4 w-4 -translate-y-1/2 text-gray-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="">
+                        <label className="text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <Field
+                          as="select"
+                          name="status"
+                          className={fieldClassName}
+                          onChange={(e) => {
+                            handleChange(e);
+                            handleFormChange({ ...values, status: e.target.value });
+                          }}
+                        >
+                          <option value="">Select Status</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                          <option value="All">All</option>
+                        </Field>
+                        <ErrorMessage name="status" component="div" className="text-xs text-rose-600" />
+                      </div>
+                      <div className="relative">
+                        <label htmlFor="parentRole" className="text-sm font-medium text-gray-700 mb-1">By Feedback</label>
+                        <select
+                          value={feedbackName}
+                          onChange={(e) => {
+                            const name = e.target.value; // selected name
+                            const id = e.target.selectedOptions[0].dataset.id; // get id from data-id
+                            setFeedbackName(name);
+                            setFeedbackId(id);
+                          }}
+                          className="appearance-none w-full rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-10 text-sm text-gray-700 shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-indigo-100"
+                        >
+                          <option value="">Select Feedback</option>
+                          {feedbacksdata?.map((p) => (
+                            <option key={p.feedbackId || p.feedbackId} value={p?.userName} data-id={p.feedbackId || p.feedbackId}>
+                              {p?.userName}
+                            </option>
+                          ))}
+                        </select>
+                        <svg
+                          className="pointer-events-none absolute right-1 top-10 h-4 w-4 -translate-y-1/2 text-gray-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+
+                      {/* Start Date */}
+                      <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-1">
+                          Start Date
+                        </label>
+                        <Field
+                          type="date"
+                          name="start"
+                          max={today}
+                          onChange={(e) => {
+                            handleChange(e);
+                            setFilters((prev) => ({
+                              ...prev,
+                              start: e.target.value, // filters state update
+                            }));
+                          }}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500"
+                        />
+                        <ErrorMessage
+                          name="start"
+                          component="div"
+                          className="text-xs text-rose-600 mt-1"
+                        />
+                      </div>
+
+                      {/* End Date */}
+                      <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-1">
+                          End Date
+                        </label>
+                        <Field
+                          type="date"
+                          name="end"
+                          max={today}
+                          onChange={(e) => {
+                            handleChange(e);
+                            setFilters((prev) => ({
+                              ...prev,
+                              end: e.target.value, // filters state update
+                            }));
+                          }}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500"
+                        />
+                        <ErrorMessage
+                          name="end"
+                          component="div"
+                          className="text-xs text-rose-600 mt-1"
+                        />
+                      </div>
+
+                      {/* Buttons */}
+                      <div className="flex gap-2">
+                        {/* <button
+                          type="submit"
+                          className="rounded-lg bg-purple-500 px-4 py-2 text-white font-semibold hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                          Apply
+                        </button> */}
+                        <button
+                          type="button"
+                          className="rounded-lg cursor-pointer bg-gray-300 px-4 py-2 font-semibold hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                          onClick={() => handleReset(resetForm)}
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex flex-col">
-                  <Field
-                    type="date"
-                    name="start"
-                    max={today}
-                    className={fieldClassName}
-                    onChange={(e) => {
-                      handleChange(e);
-                      handleFormChange({ ...values, start: e.target.value });
-                    }}
-                  />
-                  <ErrorMessage name="start" component="div" className="text-xs text-rose-600" />
-                </div>
-
-                <div className="flex flex-col">
-                  <Field
-                    type="date"
-                    name="end"
-                    max={today}
-                    className={fieldClassName}
-                    onChange={(e) => {
-                      handleChange(e);
-                      handleFormChange({ ...values, end: e.target.value });
-                    }}
-                  />
-                  <ErrorMessage name="end" component="div" className="text-xs text-rose-600" />
-                </div>
-              </div>
-
-              <div className="flex items-end sm:w-full lg:w-auto">
-                <button type="submit" className={buttonClassName}>Download Excel</button>
+                {/* Download Button */}
+                <button
+                  type="submit"
+                  className="rounded bg-purple-500 px-4 py-2 text-white hover:bg-purple-600"
+                >
+                  Download Excel
+                </button>
               </div>
             </Form>
-
             <DataTable columns={columns} data={rows} rowKey="auditId" className="mt-2" />
           </>
         )}

@@ -10,9 +10,10 @@ import {
   toUtcStartOfDay,
 } from "../../helper";
 import toast from "react-hot-toast";
-import { useGetAllPackagesAuditQuery, useGetAllPackagesQuery } from "../../redux/packagesModule/packagesModuleApi";
+import { useGetAllPackagesAuditQuery, useGetAllPackagesQuery, useLazyGetExportExcelAuditPackagesQuery } from "../../redux/packagesModule/packagesModuleApi";
 import { BASE_URL } from "../../constants/apiUrls";
 import { useGetAllUserListingQuery } from "../../redux/adminUserModule/adminUserModuleApi";
+import { useSelector } from "react-redux";
 
 /* --------------------------- validation -------------------------- */
 const isNotFuture = (v) => !v || new Date(v) <= new Date();
@@ -59,7 +60,6 @@ const AuditPackages = () => {
   packageId: packageId || "",
   from: filters.start ? toUtcStartOfDay(filters.start) : "",
   to: filters.end ? toUtcEndOfDay(filters.end) : "",
-  // to: filters.end ? toUtcEndOfDay(filters.end) : "",
   fieldIncludes: fieldId || "",
 }), [filters, parentRoleId, packageId, fieldId]);
   /* ----------------------- API Fetch ----------------------- */
@@ -95,18 +95,20 @@ const AuditPackages = () => {
   }, [showFilters]);
 
   /* ----------------------- Handle Download ----------------------- */
-  const handleDownload = async (values) => {
-    try {
-      const from = toUtcStartOfDay(values.start) || getDateNDaysAgo(7);
-      const to = toUtcEndOfDay(values.end) || getCurrentDate();
 
-      const response = await fetch(`${BASE_URL}packages/audits/export.xlsx?${params?.packageId ? `packageId=${params.packageId}` : ""}${params?.updatedBy ? `&updatedBy=${params.updatedBy}` : ""}${params?.fieldIncludes ? `&fieldIncludes=${params.fieldIncludes}` : ""}`, {
+  const Bearertoken = useSelector((state) => state.auth?.token);
+  // console.log("Bearer token :", Bearertoken);
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}packages/audits/export.xlsx?${params?.from ? `from=${params.from}` : ""}${params?.to ? `&to=${params.to}` : ""}${params?.packageId ? `&packageId=${params.packageId}` : ""}${params?.updatedBy ? `&updatedBy=${params.updatedBy}` : ""}${params?.fieldIncludes ? `&fieldIncludes=${params.fieldIncludes}` : ""}`, {
         method: "GET",
         headers: {
           Accept:
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          Authorization: `Bearer ${Bearertoken}`,
         },
       });
+
 
       if (!response.ok) throw new Error("Failed to download file");
 
@@ -190,8 +192,8 @@ const AuditPackages = () => {
   if (isLoading || isLoadingUsers || isLoadingPackages) {
     return <Loader />;
   }
-  
 
+ 
 
   const handleReset = (resetForm) => {
     resetForm();

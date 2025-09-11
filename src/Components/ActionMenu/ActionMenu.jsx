@@ -61,14 +61,22 @@ const ActionMenu = ({
             .map((item, idx) => (
               <button
                 key={idx}
-                onClick={() => {
-                  item.onClick?.();
-                  setOpen(false);
-                }}
+                // onClick={() => {
+                //   e.preventDefault();
+                //   console.log("onClick  :", item.label);
+                //   return;
+                //   item.onClick?.();
+                //   setOpen(false);
+                // }}
                 onMouseDown={(e) => {
-                  e.preventDefault(); // focus lose na ho
-                  item.onClick?.();
-                  setOpen(false);
+                  // e.preventDefault(); // focus lose na ho
+                   e.stopPropagation();
+                  // item.onClick?.();
+                  setTimeout(() => {
+                    item.onClick?.();
+                    setOpen(false);
+                  }, 0);
+                  // setOpen(false);
                 }}
                 disabled={item.disabled}
                 className={`block w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${

@@ -47,6 +47,11 @@ export const packagesModuleApi = api.injectEndpoints({
     }),
 
 
+
+
+
+    
+
     getAllPackagesAudit: builder.query({
       query: (body) => {
         return {
@@ -55,6 +60,16 @@ export const packagesModuleApi = api.injectEndpoints({
         };
       },
       providesTags: ["PackagesList","GetAllPackagesAudit"],
+    }),
+
+    getExportExcelAuditPackages: builder.query({
+      query: (body) => {
+        return {
+          url: `packages/audits/export.xlsx?${body?.from ? `from=${body.from}` : ""}${body?.to ? `&to=${body.to}` : ""}${body?.packageId ? `&packageId=${body.packageId}` : ""}${body?.updatedBy ? `&updatedBy=${body.updatedBy}` : ""}${body?.fieldIncludes ? `&fieldIncludes=${body.fieldIncludes}` : ""}`,
+          responseHandler: (response) => response.blob(),
+        };
+      },
+      providesTags: ["GetAuditPackages"],
     }),
 
     ///packages/audits
@@ -68,4 +83,5 @@ export const {
     useUpdateMockLivePackageRatesMutation,
     useUpdatePackageMutation,
     useGetAllPackagesAuditQuery,
+    useLazyGetExportExcelAuditPackagesQuery,
 } = packagesModuleApi;
