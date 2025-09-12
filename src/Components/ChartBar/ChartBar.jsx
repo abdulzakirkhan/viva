@@ -94,10 +94,6 @@ export default function ChartBar() {
     return new Date(dateStr + "T00:00:00Z").toISOString();
   };
 
-  // Handle loading and error states in the render, not with early returns
-  if (isLoading) return <div>Loading chart...</div>;
-  if (error) return <div>Error loading chart data</div>;
-
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <div className="flex items-center mb-3 justify-between">

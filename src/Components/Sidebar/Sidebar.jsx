@@ -360,8 +360,9 @@ const Sidebar = () => {
 
   const MENU = useMemo(() => [...staticMenu, ...dynamicMenu], [staticMenu, dynamicMenu]);
 
+  // sidebar height should be h-screen for the time being, otherwise 100vh causes issues on mobile
   return (
-    <div className="w-64 bg-white md:block h-screen overflow-y-auto">
+    <div className="w-64 bg-white md:block h-full overflow-y-auto">
       <div className="p-4 text-xl text-black">
         <img src={Logo} alt="Logo" />
       </div>

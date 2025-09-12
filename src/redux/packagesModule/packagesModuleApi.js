@@ -72,6 +72,15 @@ export const packagesModuleApi = api.injectEndpoints({
       providesTags: ["GetAuditPackages"],
     }),
 
+    getPackagesSubscribersPieChart: builder.query({
+      query: (body) => {
+        return {
+          url: `${LIST_PACKAGES}/insights/subscribers-pie`,
+        };
+      },
+      providesTags: ["GetAuditPackages"],
+    }),
+
     ///packages/audits
     // Add more auth endpoints as needed
   }),
@@ -84,4 +93,5 @@ export const {
     useUpdatePackageMutation,
     useGetAllPackagesAuditQuery,
     useLazyGetExportExcelAuditPackagesQuery,
+    useGetPackagesSubscribersPieChartQuery,
 } = packagesModuleApi;

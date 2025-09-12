@@ -283,11 +283,6 @@ const Clients = () => {
             rowClassName={(r) => (!r.enabled ? "opacity-60" : "")}
             avatar={true}
           />
-
-          {/* empty state */}
-          {filtered.length === 0 && (
-            <p className="mt-4 text-center text-sm text-gray-500">No clients found.</p>
-          )}
         </>
       )}
       {total > 0 && (
