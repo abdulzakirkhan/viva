@@ -5,15 +5,14 @@ import {
   CategoryScale, LinearScale, BarElement, LineElement, PointElement,
   Tooltip, Legend
 } from "chart.js";
-import { Bar, Doughnut, Chart } from "react-chartjs-2";
-import { ChartBar, HotSellingPackagePie, Loader } from "../../Components";
-import { logOut } from "../../redux/auth/authSlice";
-import { useSelector } from "react-redux";
+import { Bar} from "react-chartjs-2";
+import { ChartBar, HotSellingPackagePie, Loader, SubscriptionInsightsCard } from "../../Components";
 import { useGetAllUsersKpisQuery, useGetKpisWeeklySeriesQuery } from "../../redux/analyticsModule/analyticsModuleApi";
+import { useGetHighestAndlowestSubscribersPackageQuery } from "../../redux/packagesModule/packagesModuleApi";
+
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
-/* ----------- helpers (Chart.js) ----------- */
 
 // Spark bar (mini) – one dark column + rest violet, no axes/grid/labels
 const sparkData = (series = [], highlightIndex = 3) => ({
@@ -38,66 +37,6 @@ const sparkOptions = {
   },
 };
 
-// const comboData = {
-//   labels: months,
-//   datasets: [
-//     {
-//       type: "bar",
-//       label: "Bars",
-//       data: [28,22,30,18,26,14,10,80,20,65,12,32],
-//       backgroundColor: "#E0E7FF",
-//       borderRadius: 10,
-//       borderSkipped: false,
-//     },
-//     {
-//       type: "line",
-//       label: "Line",
-//       data: [40,20,48,60,15,10,80,50,72,48,20,42],
-//       borderColor: "#7C3AED",
-//       pointRadius: 0,
-//       borderWidth: 4,
-//       tension: 0.4,
-//     },
-//   ],
-// };
-
-// const comboOptions = {
-//   responsive: true,
-//   maintainAspectRatio: false,
-//   plugins: { legend: { display: false }, tooltip: { mode: "index", intersect: false } },
-//   scales: {
-//     x: {
-//       grid: { display: false },
-//       ticks: { color: "#9CA3AF" },
-//     },
-//     y: {
-//       suggestedMax: 90,
-//       ticks: { color: "#9CA3AF", stepSize: 10 },
-//       grid: { color: "#EEF2FF" },
-//     },
-//   },
-// };
-
-// Doughnut (Hot Selling Package)
-const pieData = {
-  labels: ["Enterprise", "Pro", "Plus"],
-  datasets: [
-    {
-      data: [181, 68, 70],
-      backgroundColor: ["#8B5CF6", "#E5E7EB", "#FACC15"],
-      borderWidth: 0,
-    },
-  ],
-};
-const pieOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { position: "left", labels: { boxWidth: 10 } },
-    tooltip: { callbacks: { label: (c) => `${c.label}: ${c.parsed}` } },
-  },
-  cutout: 70, // inner radius
-};
 
 /* ---------- small components ---------- */
 const Card = ({ children }) => (
@@ -148,7 +87,7 @@ export default function Dashboard() {
 
   const { data, error, isLoading } = useGetAllUsersKpisQuery();
   const { data: weeklyData, error: weeklyError, isLoading: weeklyLoading } = useGetKpisWeeklySeriesQuery();
-
+  const { data: highestLowestData, error: highestLowestError, isLoading: highestLowestLoading } = useGetHighestAndlowestSubscribersPackageQuery();
 
 
   const active =data?.active;
@@ -169,10 +108,15 @@ export default function Dashboard() {
     { title: "Cancel Subscription", subtitle: "", value: cancelled?.total, delta: cancelled?.wowDeltaPct + "%", up: cancelled?.wowDeltaPct > 0, data: cancelledData},
   ];
 
-  if(isLoading || weeklyLoading){
+  const newData = highestLowestData?.highest || {}
+
+  const lowest=highestLowestData?.lowest || {}
+
+
+  if(isLoading || weeklyLoading || highestLowestLoading){
     return <Loader />
   }
-
+  
   return (
     <main className="min-h-screen px-4 py-6 lg:px-8 bg-[#F5F7F9] dark:bg-gray-950">
       {/* KPI row */}
@@ -190,6 +134,18 @@ export default function Dashboard() {
         </div>
         <div className="xl:col-span-2">
           <HotSellingPackagePie />
+        </div>
+      </section>
+
+
+
+      {/* {highestLowestData} */}
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-6 mt-6">
+        <div className="w-full lg:col-span-3">
+          <SubscriptionInsightsCard highest={newData} title={"Most Subscribed Package"} />
+        </div>
+        <div className="w-full lg:col-span-3">
+          <SubscriptionInsightsCard highest={lowest} title={"Least Subscribed Package"} />
         </div>
       </section>
     </main>

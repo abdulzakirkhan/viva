@@ -57,11 +57,16 @@ const TagsInput = ({ values, setFieldValue }) => {
 };
 
 const validationSchema = Yup.object({
-  name: Yup.string().required("Package name is required"),
-  description: Yup.string().required("Description is required"),
-  price: Yup.number().required("Price is required").min(0),
-  totalMockMinutes: Yup.number().min(0),
-  totalLiveMinutes: Yup.number().min(0),
+  name: Yup.string().trim()
+    .min(4, "Name must be at least 4 characters").required("Package name is required"),
+  description: Yup.string().trim().min(10, "Description must be at least 10 characters").required("Description is required"),
+  price: Yup.number().min(0, "Price should not be negative").required("Price is required"),
+  totalMockMinutes: Yup.number()
+  .strict()
+  .required("Total mock minutes is required")
+  .min(0, "Total mock minutes must be at least 0"),
+
+  totalLiveMinutes: Yup.number().min(0,"Total live minutes must be at least 0").required("Total live minutes is required"),
   features: Yup.array().of(Yup.string()).min(1, "At least one feature required"),
 });
 
@@ -96,7 +101,7 @@ const UpdatePackage = () => {
  
 
   return (
-    <div className="max-w-3xl mx-auto ">
+    <div className="max-w-3xl mx-auto py-8">
       <div className="bg-white rounded-2xl shadow-md p-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">{title}</h1>
         {!isInterPrise ? (
@@ -138,15 +143,15 @@ const UpdatePackage = () => {
                   duration:foundPackage?.duration,
                   subscribersCount:foundPackage?.subscribersCount,
                 }
-                // Call the update mutation
-                // updatePackage.mutate(payload);
                 const result =await updatePackage(payload).unwrap();
-                if(result?.message === "Package updated" || result?.data){
-                  toast.success("Package updated successfully");
+                if(result?.message === "RateConfig updated" || result?.data){
+                  toast.success("RateConfig updated.");
                   navigate("/packages")
                 }
               } catch (error) {
                 toast.error(error || "Something went wrong");
+              }finally{
+                setSubmitting(false);
               }
             }}
           >
@@ -228,6 +233,11 @@ const UpdatePackage = () => {
                       name="totalMockMinutes"
                       className="w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500"
                     />
+                    <ErrorMessage
+                      name="totalMockMinutes"
+                      component="p"
+                      className="text-xs text-red-500 mt-1"
+                    />
                   </div>
 
                   <div>
@@ -238,6 +248,11 @@ const UpdatePackage = () => {
                       type="number"
                       name="totalLiveMinutes"
                       className="w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                    />
+                    <ErrorMessage
+                      name="totalLiveMinutes"
+                      component="p"
+                      className="text-xs text-red-500 mt-1"
                     />
                   </div>
                 </div>

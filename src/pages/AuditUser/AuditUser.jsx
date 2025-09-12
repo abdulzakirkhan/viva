@@ -214,7 +214,6 @@ const AuditUser = () => {
     return <Loader />;
   }
 
-  console.log("userId :", userId);
 
   return (
     <div className="px-4 py-8 bg-[#F5F7F9]">

@@ -38,6 +38,7 @@ const insideLabels = {
       const { x, y } = arc.getCenterPoint();
       const value = ds.data[i];
       const pct = Math.round((value / total) * 100);
+      if (pct < 10) return;
       const percentageLabel = `${pct}%`;
 
       const color = ds.backgroundColor[i];
@@ -89,12 +90,12 @@ export default function HotSellingPackagePie() {
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
-      <h3 className="text-sm font-medium text-gray-700 mb-3">
+      <h3 className="text-sm font-medium text-gray-700">
         Hot Selling Package
       </h3>
 
       {/* Custom Legend */}
-      <div className="mt-4 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+      <div className="mt-2 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
         {groups.map((g, i) => (
           <div key={g.key} className="flex items-center space-x-2">
             <span
@@ -107,7 +108,7 @@ export default function HotSellingPackagePie() {
       </div>
 
       {/* Pie Chart */}
-      <div className="relative h-[300px]">
+      <div className="relative h-[285px]">
         <Pie data={data} options={options} plugins={[insideLabels]} />
       </div>
     </div>

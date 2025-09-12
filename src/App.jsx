@@ -1,6 +1,6 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { AllRoles, AuditPackages, AuditUser, Clients, Dashboard, Feedbacks, FeedbacksCsv, NotFound, Packages, Reports, Roles, SignIn, UpdatePackage, UserAdd, UsersList } from './pages'
-import { BlankLayout, MainLayout } from './layouts'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { AllRoles, AuditPackages, AuditUser, Clients, Dashboard, Feedbacks, FeedbacksCsv, Packages, Reports, Roles, SignIn, UpdatePackage, UserAdd, UsersList } from './pages'
+import { BlankLayout } from './layouts'
 import { Toaster } from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { ProtectedLayout } from './Components'
@@ -43,8 +43,7 @@ function App() {
           <Route path="/audit/packages" element={<AuditPackages />} />
           <Route path="/audit/users" element={<AuditUser />} />
         </Route>
-        
-        {/* <Route path="*" element={<NotFound />} /> */}
+
         <Route path="*" element={<Navigate to="/signin" replace />} />
         
       </Routes>

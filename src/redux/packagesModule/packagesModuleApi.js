@@ -80,6 +80,14 @@ export const packagesModuleApi = api.injectEndpoints({
       },
       providesTags: ["GetAuditPackages"],
     }),
+    getHighestAndlowestSubscribersPackage: builder.query({
+      query: (body) => {
+        return {
+          url: `${LIST_PACKAGES}/insights/subscriber-extremes`,
+        };
+      },
+      providesTags: ["GetAuditPackages"],
+    }),
 
     ///packages/audits
     // Add more auth endpoints as needed
@@ -87,11 +95,13 @@ export const packagesModuleApi = api.injectEndpoints({
 });
 
 export const {
-    useGetAllPackagesQuery,
-    useGetMockLivePackagesRatesQuery,
-    useUpdateMockLivePackageRatesMutation,
-    useUpdatePackageMutation,
-    useGetAllPackagesAuditQuery,
-    useLazyGetExportExcelAuditPackagesQuery,
-    useGetPackagesSubscribersPieChartQuery,
+  useGetAllPackagesQuery,
+  useGetMockLivePackagesRatesQuery,
+  useUpdateMockLivePackageRatesMutation,
+  useUpdatePackageMutation,
+  useGetAllPackagesAuditQuery,
+  useLazyGetExportExcelAuditPackagesQuery,
+  useGetPackagesSubscribersPieChartQuery,
+  useGetHighestAndlowestSubscribersPackageQuery,
+  
 } = packagesModuleApi;

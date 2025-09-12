@@ -44,11 +44,10 @@ const PackagesRatesForm = () => {
                 mockRate: Number(values.mockRate),
             };
             const result = await updateRates(payload).unwrap();
-            console.log("result :", result);
             if(result?.message === "RateConfig updated"){
               toast.success(result?.message || "Rates updated successfully");
               setSubmitting(false);
-              // navigate("/packages");
+              navigate("/packages");
             }else if(result?.message === "No changes detected."){
               toast.error("No changes detected.");
               setSubmitting(false);

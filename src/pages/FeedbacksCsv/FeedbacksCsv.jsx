@@ -585,7 +585,7 @@ const FeedbacksCsv = () => {
                 {/* Download Button */}
                 <button
                   type="submit"
-                  className="rounded bg-purple-500 px-4 py-2 text-white hover:bg-purple-600"
+                  className="rounded cursor-pointer bg-purple-500 px-4 py-2 text-white hover:bg-purple-600"
                 >
                   Download Excel
                 </button>
