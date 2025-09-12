@@ -24,8 +24,8 @@ export default function ChartBar() {
     [data]
   );
 
-  const bars =  Array.isArray(data?.counts) ? data.counts : [];
-  const line =  data.counts || [];
+  const bars =  Array.isArray(data?.counts) ? data?.counts : [];
+  const line =  Array.isArray(data?.counts) ? data?.counts : [];
   const hi = useMemo(() => 
     bars.length > 0 ? bars.indexOf(Math.max(...bars)) : -1, 
     [bars]
