@@ -24,8 +24,8 @@ export default function ChartBar() {
     [data]
   );
 
-  const bars = data?.counts || [];
-  const line = data?.counts || [];
+  const bars =  Array.isArray(data?.counts) ? data.counts : [];
+  const line =  data.counts || [];
   const hi = useMemo(() => 
     bars.length > 0 ? bars.indexOf(Math.max(...bars)) : -1, 
     [bars]
@@ -57,12 +57,15 @@ export default function ChartBar() {
       {
         type: "line",
         order: 2,
-        data: line,
+        data: Array.isArray(line) ? line : [],
         borderColor: "rgba(124,58,237,.22)",
         borderWidth: 3,
         tension: 0.4,
         cubicInterpolationMode: "monotone",
-        pointRadius: (ctx) => (ctx.dataIndex === hi ? 3 : 0),
+        pointRadius: (ctx) => {
+    if (!ctx || typeof ctx.dataIndex !== "number") return 0; // ✅ safe check
+    return ctx.dataIndex === hi ? 3 : 0;
+  },
         pointBackgroundColor: "#FFFFFF",
         pointBorderColor: "#7C3AED",
         pointBorderWidth: 2,
